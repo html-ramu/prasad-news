@@ -6,10 +6,10 @@
 }
 
 :root {
-    --primary-color: #0F172A; /* Deep Navy - Premium Look */
+    --primary-color: #0F172A; 
     --secondary-color: #1E293B;
-    --accent-color: #E11D48; /* Crimson/Rose for alerts/live */
-    --accent-blue: #3B82F6; /* Modern Blue for interactive elements */
+    --accent-color: #E11D48; 
+    --accent-blue: #3B82F6; 
     --bg-gray: #F8FAFC;
     --text-dark: #334155;
     --header-gradient: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
@@ -32,6 +32,19 @@ body {
     background: #ffffff;
     border-bottom: 1px solid #E2E8F0;
     color: #64748B;
+}
+
+/* New CSS for the small logo next to the date */
+.date-display {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+}
+.top-mini-logo {
+    height: 18px;
+    width: auto;
+    border-radius: 2px;
+    margin-right: 6px;
 }
 
 .top-bar-2 {
@@ -59,7 +72,7 @@ body {
 .logo-area img { 
     height: 45px; 
     cursor: pointer; 
-    border-radius: 4px; /* Soften logo edges */
+    border-radius: 4px; 
 }
 
 .live-area { 
@@ -159,31 +172,28 @@ body {
     text-align: center;
     position: relative;
     padding: 10px;
-    background: #CBD5E1; /* Darker backdrop to make paper pop */
+    background: #CBD5E1; 
 }
 .viewer-container img {
     max-width: 100%; height: auto; display: block; margin: 0 auto;
     box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-    background: white; /* Ensures transparent PNGs still look like paper */
+    background: white; 
 }
 
-/* SIDE ARROWS - Fixed Overlap Issues */
+/* SIDE ARROWS - Fixed for Mobile (smaller & more transparent) */
 .nav-arrow {
     position: fixed; top: 50%; transform: translateY(-50%);
-    background-color: rgba(15, 23, 42, 0.6); color: white;
-    border: none; width: 44px; height: 44px; font-size: 20px; cursor: pointer;
+    background-color: rgba(15, 23, 42, 0.35); /* highly transparent so text is visible */
+    color: white;
+    border: none; width: 38px; height: 38px; font-size: 16px; cursor: pointer;
     z-index: 950; border-radius: 50%; transition: all 0.3s ease;
     display: flex; align-items: center; justify-content: center;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(2px);
 }
-.nav-arrow:hover { background-color: rgba(15, 23, 42, 0.9); transform: translateY(-50%) scale(1.1); }
-.left-arrow { left: 10px; }
-.right-arrow { right: 10px; }
+.nav-arrow:hover { background-color: rgba(15, 23, 42, 0.8); transform: translateY(-50%) scale(1.1); }
+.left-arrow { left: 5px; }
+.right-arrow { right: 5px; }
 .nav-arrow:disabled { opacity: 0; pointer-events: none; }
-@media (max-width: 768px) {
-    /* Hide on very small screens to avoid blocking text, rely on bottom controls */
-    .nav-arrow { display: none; }
-}
 
 /* MODALS */
 .modal {
@@ -222,7 +232,7 @@ body {
 }
 .clipper-controls {
     padding: 20px; display: flex; justify-content: center; gap: 15px; background: #1E293B;
-    padding-bottom: env(safe-area-inset-bottom, 20px); /* iPhone safe area */
+    padding-bottom: env(safe-area-inset-bottom, 20px); 
 }
 .action-btn {
     padding: 12px 24px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;
@@ -230,7 +240,7 @@ body {
     max-width: 200px; transition: transform 0.1s;
 }
 .action-btn:active { transform: scale(0.96); }
-.share-btn { background-color: #10B981; } /* Modern Emerald Green */
+.share-btn { background-color: #10B981; } 
 .download-btn { background-color: var(--accent-blue); }
 
 /* PREMIUM FOOTER */

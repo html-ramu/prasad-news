@@ -1,5 +1,5 @@
 // CONFIGURATION
-const REPO_URL = "https://epaperprasadnews.in"; // Placeholder, update if needed
+const REPO_URL = "https://epaperprasadnews.in"; 
 
 // DATA 
 let editions = {}; 
@@ -77,13 +77,11 @@ function loadEdition(dateStr) {
     
     document.getElementById('liveDate').innerText = dateStr;
     
-    // --- UNIFIED PDF LOGIC ---
     const pdfBtn = document.getElementById('btnPdf');
     if (pdfBtn) {
         const pdfUrl = `papers/${dateStr}/full.pdf`;
         pdfBtn.onclick = null; 
         pdfBtn.href = pdfUrl;
-        // REQUIRED: Changed naming convention
         pdfBtn.setAttribute("download", `Prasad-News-${dateStr}.pdf`);
         pdfBtn.target = "_blank"; 
         pdfBtn.style.display = "flex"; 
@@ -114,8 +112,8 @@ function changePage(delta) {
     const newPage = currentPage + delta;
     if (newPage >= 1 && newPage <= totalPages) {
         try {
-            // REQUIRED: Updated audio asset name to match prompt
-            const audio = new Audio('assets/Page-flip-4.mp3');
+            // FIX: Ensured exact lowercase file name based on your git commit log
+            const audio = new Audio('assets/page-flip-4.mp3');
             audio.volume = 0.5;
             audio.play().catch(e => console.log("Audio waiting for interaction"));
         } catch (err) { console.log("Audio error", err); }
@@ -217,7 +215,7 @@ function getBrandedCanvas() {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, finalWidth, finalHeight);
 
-    // Big Logo - Pulling from Clipper Header specifically
+    // Big Logo
     const logoImg = document.querySelector('.clipper-logo'); 
     if (logoImg && logoImg.complete) {
         const logoH = Math.round(100 * scale); 
@@ -270,7 +268,6 @@ function downloadClip() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        // REQUIRED: Changed downloaded clip naming convention
         a.download = `Prasad-News-Clip-${Date.now()}.png`;
         document.body.appendChild(a);
         a.click();
