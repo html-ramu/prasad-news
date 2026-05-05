@@ -11,10 +11,10 @@ UPLOADS_DIR = "uploads"
 PAPERS_DIR = "papers"
 ASSETS_DIR = "assets"
 INDEX_HTML_FILE = "index.html"
-DOMAIN_URL = "https://epaperprasadnews.in"
+# FIXED: Pointing exactly to your GitHub domain
+DOMAIN_URL = "https://html-ramu.github.io/prasad-news"
 
 def main():
-    # 1. Find the PDF
     pdfs = glob.glob(os.path.join(UPLOADS_DIR, "*.pdf"))
     if not pdfs:
         print("No PDF found in uploads/ folder.")
@@ -26,13 +26,11 @@ def main():
     
     print(f"Processing Edition: {date_str}")
 
-    # 2. Create Output Directory
     output_dir = os.path.join(PAPERS_DIR, date_str)
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     os.makedirs(output_dir)
 
-    # 3. Convert PDF to Images
     subprocess.run([
         "pdftoppm", 
         "-png", 
@@ -40,24 +38,21 @@ def main():
         os.path.join(output_dir, "")
     ], check=True)
 
-    # 4. Rename images to 1.png, 2.png, etc.
     generated_images = sorted(glob.glob(os.path.join(output_dir, "*.png")))
     page_count = len(generated_images)
     
     final_images = []
     for i, img_path in enumerate(generated_images):
         new_name = f"{i+1}.png"
-        new_path = os.path.join(output_dir, new_path_name:=new_name)
+        new_path = os.path.join(output_dir, new_name)
         os.rename(img_path, new_path)
         final_images.append(new_path)
     
     print(f"Generated {page_count} pages.")
 
-    # 5. Create WhatsApp Preview (Smart Crop + Compression)
     if final_images:
         create_smart_preview(date_str, final_images[0])
 
-    # 6. Move PDF to target folder
     target_pdf = os.path.join(output_dir, "full.pdf")
     shutil.move(pdf_path, target_pdf)
 
@@ -66,7 +61,6 @@ def main():
 def create_smart_preview(date_str, source_image_path):
     target_cover = os.path.join(ASSETS_DIR, "latest-cover.jpg")
     
-    # --- SMART CROP LOGIC ---
     with Image.open(source_image_path) as img:
         width, height = img.size
         crop_height = int(height * 0.45) 
@@ -77,13 +71,11 @@ def create_smart_preview(date_str, source_image_path):
         
         print(f"Created Smart Crop (Top 45%) for WhatsApp preview [Optimized JPG]")
 
-    # Update index.html social tags
     with open(INDEX_HTML_FILE, "r", encoding="utf-8") as f:
         html_content = f.read()
 
     new_image_url = f"{DOMAIN_URL}/assets/latest-cover.jpg?v={date_str}"
     
-    # Regex to replace the content inside og:image meta tag
     pattern_og = r'(<meta property="og:image" content=")(.*?)(")'
     
     if re.search(pattern_og, html_content):
