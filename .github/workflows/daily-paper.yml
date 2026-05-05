@@ -1,0 +1,155 @@
+name: Process Newspaper PDF
+
+on:
+  push:
+    paths:
+      - 'uploads/**.pdf'
+
+permissions:
+  contents: write
+
+jobs:
+  convert-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          pip install Pillow
+
+      - name: 🛡️ Smart Filename Extract, Validate & Rename
+        id: rename_pdf
+        run: |
+          # --- 1. Multiple PDF Safety ---
+          shopt -s nullglob
+          files=(uploads/*.pdf)
+          if [ ${#files[@]} -ne 1 ]; then
+            echo "::error::CRITICAL: Exactly one PDF must be uploaded at a time. Found ${#files[@]}."
+            exit 1
+          fi
+          
+          file="${files[0]}"
+          
+          if [ -f "$file" ]; then
+            filename=$(basename "$file")
+            
+            # --- 2. Improved Date Regex Validation ---
+            date_str=$(echo "$filename" | grep -oE '([0-3][0-9]-[0-1][0-9]-[0-9]{4})' | head -n 1 || true)
+            
+            if [ -z "$date_str" ]; then
+              echo "::error::CRITICAL: No valid date (DD-MM-YYYY) found in filename: $filename"
+              exit 1
+            fi
+            
+            echo "✅ Extracted valid date: $date_str"
+            
+            # Duplicate Date Prevention
+            if [ -d "papers/$date_str" ]; then
+              echo "::error::CRITICAL: Edition for $date_str already exists in papers/$date_str/. Halting to prevent overwrite."
+              exit 1
+            fi
+            
+            # Future Date Block
+            y1=${date_str:6:4}
+            m1=${date_str:3:2}
+            d1=${date_str:0:2}
+            extracted_num="$y1$m1$d1"
+            
+            today_num=$(TZ='Asia/Kolkata' date +%Y%m%d)
+            
+            if [ "$extracted_num" -gt "$today_num" ]; then
+              echo "::error::CRITICAL: Extracted date ($date_str) is in the future. Today is $(TZ='Asia/Kolkata' date +%d-%m-%Y). Halting."
+              exit 1
+            fi
+            
+            # Export date for the final summary step
+            echo "EDITION_DATE=$date_str" >> $GITHUB_ENV
+            
+            new_path="uploads/${date_str}.pdf"
+            if [ "$file" != "$new_path" ]; then
+              mv "$file" "$new_path"
+              echo "🔄 Renamed '$filename' to '${date_str}.pdf'"
+            fi
+          fi
+
+      - name: Run Processing Script
+        run: python scripts/process_pdf.py
+
+      - name: 📄 Generate editions.json
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          
+          const papersDir = 'papers';
+          const editions = {};
+          const editionDate = process.env.EDITION_DATE;
+          
+          if (fs.existsSync(papersDir)) {
+            const folders = fs.readdirSync(papersDir).filter(f => fs.statSync(path.join(papersDir, f)).isDirectory());
+            
+            folders.sort((a, b) => {
+              const [d1, m1, y1] = a.split('-').map(Number);
+              const [d2, m2, y2] = b.split('-').map(Number);
+              return new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1);
+            });
+            
+            folders.forEach(folder => {
+              if (/^\d{2}-\d{2}-\d{4}$/.test(folder)) {
+                const files = fs.readdirSync(path.join(papersDir, folder));
+                const pages = files.filter(f => f.endsWith('.png')).length;
+                
+                if (pages > 0) {
+                  editions[folder] = { pages: pages, pdf: 'full.pdf' };
+                  
+                  // --- Extract page count for the workflow summary ---
+                  if (folder === editionDate) {
+                    fs.appendFileSync(process.env.GITHUB_ENV, \`\nPAGE_COUNT=\${pages}\n\`);
+                  }
+                }
+              }
+            });
+          }
+          
+          fs.writeFileSync('editions.json', JSON.stringify(editions, null, 2));
+          console.log('✅ editions.json generated with ' + Object.keys(editions).length + ' editions.');
+          "
+
+      - name: Save Changes
+        run: |
+          git config --global user.name "Prasad Robot"
+          git config --global user.email "robot@prasadnews.in"
+          git add --all uploads/ papers/ editions.json assets/ index.html
+          git commit -m "Auto-published edition with Smart Crop & Rename" || echo "No changes to commit"
+          git push
+
+      - name: 🛡️ Set Safe Default for PAGE_COUNT
+        if: always()
+        run: |
+          if [ -z "$PAGE_COUNT" ]; then
+            echo "PAGE_COUNT=0" >> $GITHUB_ENV
+          fi
+
+      - name: 📊 Workflow Summary Output
+        if: success()
+        run: |
+          echo "--------------------------------------"
+          echo "Edition Published Successfully"
+          echo "Date: ${{ env.EDITION_DATE }}"
+          echo "Pages: ${{ env.PAGE_COUNT }}"
+          echo "Folder: papers/${{ env.EDITION_DATE }}/"
+          echo "--------------------------------------"
+          
+          echo "### 🎉 Edition Published Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** ${{ env.EDITION_DATE }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Pages:** ${{ env.PAGE_COUNT }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Folder:** \`papers/${{ env.EDITION_DATE }}/\`" >> $GITHUB_STEP_SUMMARY
